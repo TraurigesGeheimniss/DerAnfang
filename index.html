@@ -1,4 +1,93 @@
-<script>
+Da sind ein paar buggs oder?
+
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ich sehe dich.</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Nosifer&display=swap');
+
+    body {
+      background-color: black;
+      color: #ff0000;
+      font-family: 'Nosifer', cursive;
+      font-size: 2em;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .message {
+      opacity: 0;
+      transition: opacity 1.5s;
+      margin: 20px;
+    }
+
+    .visible {
+      opacity: 1;
+    }
+
+    .buttons {
+      margin-top: 20px;
+    }
+
+    button {
+      background-color: #220000;
+      color: #ff4444;
+      font-size: 1.1em;
+      padding: 12px 30px;
+      margin: 10px;
+      border: 2px solid #ff4444;
+      font-family: 'Nosifer', cursive;
+      cursor: pointer;
+      letter-spacing: 1px;
+      animation: flicker 2s infinite;
+      transition: transform 0.2s;
+    }
+
+    button:hover {
+      background-color: #ff4444;
+      color: #000;
+      transform: scale(1.05);
+    }
+
+    @keyframes flicker {
+      0%, 18%, 22%, 25%, 53%, 57%, 100% {
+        opacity: 1;
+      }
+      20%, 24%, 55% {
+        opacity: 0.5;
+      }
+    }
+
+    @keyframes glitch {
+      0% {
+        text-shadow: 2px 0 red, -2px 0 blue;
+      }
+      50% {
+        text-shadow: -2px 0 red, 2px 0 blue;
+      }
+      100% {
+        text-shadow: 2px 0 red, -2px 0 blue;
+      }
+    }
+
+    .glitch {
+      animation: glitch 0.3s steps(2, end) infinite;
+    }
+  </style>
+</head>
+<body>
+  <div class="message" id="message">...</div>
+  <div class="buttons" id="buttons"></div>
+
+  <script>
   const messageEl = document.getElementById('message');
   const buttonsEl = document.getElementById('buttons');
 
@@ -117,3 +206,5 @@
 
   setTimeout(showStep, 1000);
 </script>
+</body>
+</html>
