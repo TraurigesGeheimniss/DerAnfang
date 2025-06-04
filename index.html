@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ich sehe dich.</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Ich beobachte dich...</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap');
 
@@ -11,19 +11,15 @@
       background-color: black;
       color: #ff3333;
       font-family: 'UnifrakturCook', cursive;
-      font-size: 2em;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      overflow: hidden;
-      text-align: center;
+      font-size: 1.5em;
+      padding: 2rem;
+      line-height: 1.6;
+      overflow-y: scroll;
     }
 
-    .message {
+    .line {
       opacity: 0;
-      transition: opacity 2s;
+      transition: opacity 1s;
     }
 
     .visible {
@@ -32,35 +28,70 @@
   </style>
 </head>
 <body>
-  <div class="message" id="message">Willkommen zurück...</div>
+  <div id="container">
+    <div class="line visible">Du hättest diese Seite nicht öffnen sollen...</div>
+  </div>
 
   <script>
-    const messages = [
-      () => `Dein Browser ist: ${navigator.userAgent}`,
-      () => `Dein System: ${navigator.platform}`,
-      () => `Bildschirmgröße: ${screen.width}x${screen.height}`,
-      () => `Aktuelle Uhrzeit: ${new Date().toLocaleTimeString()}`,
-      () => `Du hast mich nicht zufällig gefunden...`,
-      () => `Ich sehe, du hast diesen Tab schon ${performance.now().toFixed(0)} Millisekunden offen...`,
-      () => `Warum bist du hier?`,
-      () => `Du bist nicht allein.`,
-    ];
+    const container = document.getElementById('container');
+    const startTime = performance.now();
+    const messages = [];
 
-    let index = 0;
-    const messageEl = document.getElementById('message');
-
-    function showNextMessage() {
-      messageEl.classList.remove('visible');
-      setTimeout(() => {
-        messageEl.textContent = messages[index % messages.length]();
-        messageEl.classList.add('visible');
-        index++;
-      }, 1000);
+    function addMessage(text) {
+      const div = document.createElement('div');
+      div.className = 'line';
+      div.textContent = text;
+      container.appendChild(div);
+      setTimeout(() => div.classList.add('visible'), 100);
     }
 
-    setInterval(showNextMessage, 5000);
-    // Erste Nachricht direkt anzeigen
-    setTimeout(() => messageEl.classList.add('visible'), 1000);
+    function collectData() {
+      messages.push(`Browser: ${navigator.userAgent}`);
+      messages.push(`Sprache: ${navigator.language}`);
+      messages.push(`Plattform: ${navigator.platform}`);
+      messages.push(`Bildschirmgröße: ${screen.width}x${screen.height}`);
+      messages.push(`Zeitzone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
+      messages.push(`Aktuelle Zeit: ${new Date().toLocaleTimeString()}`);
+      messages.push(`Seit ${Math.floor(performance.now() / 1000)} Sekunden geöffnet...`);
+    }
+
+    function getIP() {
+      fetch('https://api.ipify.org?format=json')
+        .then(response => response.json())
+        .then(data => messages.push(`IP-Adresse: ${data.ip}`))
+        .catch(() => messages.push('IP-Adresse konnte nicht ermittelt werden'));
+    }
+
+    function getGeolocation() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+            messages.push(`Standort (ungefähr): Breitengrad ${latitude.toFixed(4)}, Längengrad ${longitude.toFixed(4)}`);
+          },
+          (error) => {
+            messages.push('Standortzugriff verweigert...');
+          }
+        );
+      } else {
+        messages.push('Geostandort nicht unterstützt');
+      }
+    }
+
+    collectData();
+    getIP();
+    getGeolocation();
+
+    let index = 0;
+    setInterval(() => {
+      if (index < messages.length) {
+        addMessage(messages[index]);
+        index++;
+      } else {
+        const now = new Date().toLocaleTimeString();
+        addMessage(`Du bist immer noch hier... (${now})`);
+      }
+    }, 4000);
   </script>
 </body>
 </html>
