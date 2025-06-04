@@ -107,139 +107,136 @@
     const buttonsEl = document.getElementById('buttons');
 
     const state = {
-      deviceMismatch: false,
-      timeMismatch: false
-    };
+  deviceMismatch: false,
+  timeMismatch: false
+};
 
-    const actualDevice = navigator.userAgent.toLowerCase().includes("mobile") ? "Handy" : "Computer";
+const actualDevice = navigator.userAgent.toLowerCase().includes("mobile") ? "Handy" : "Computer";
 
-    let approxTime;
-    try {
-      approxTime = new Date(Date.now() + (Math.random() * 10 + 2) * 60000)
-        .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    } catch (e) {
-      approxTime = "unbekannt";
+// Uhrzeit leicht verändert (±1 Stunde)
+let currentHour = new Date().getHours();
+let offset = Math.random() > 0.5 ? 1 : -1;
+let alteredHour = (currentHour + offset + 24) % 24;
+let approxTime = `${alteredHour.toString().padStart(2, '0')}:${new Date().getMinutes().toString().padStart(2, '0')}`;
+
+const steps = [
+  { text: "Du hast mich nicht ohne Grund gefunden" },
+  { text: "Wir müssen reden!" },
+  { text: "Aber erst einmal muss ich zu dir Vertrauen aufbauen!" },
+  {
+    text: "Hast du Angst?",
+    buttons: [
+      { label: "Ja" },
+      { label: "Nein" }
+    ]
+  },
+  { text: "Merke dir, mich nie anzulügen!" },
+  {
+    text: `Stimmt es, dass du gerade auf einem ${actualDevice} unterwegs bist?`,
+    buttons: [
+      { label: "Ja" },
+      { label: "Nein", next: () => { state.deviceMismatch = true; } }
+    ]
+  },
+  {
+    text: "Bist du allein?",
+    buttons: [
+      { label: "Ja" },
+      { label: "Nein" }
+    ]
+  },
+  {
+    text: `Stimmt es, dass es gerade ${approxTime} Uhr ist?`,
+    buttons: [
+      { label: "Ja", next: () => { state.timeMismatch = true; } },
+      { label: "Nein" }
+    ]
+  },
+  {
+    text: "Stimmt es, dass du gerade nicht draußen unterwegs bist?",
+    buttons: [
+      { label: "Ja", next: showFinal },
+      { label: "Nein", next: showFinal }
+    ]
+  }
+];
+
+let currentStep = 0;
+
+function showGlitchEffect() {
+  if (Math.random() < 0.4) {
+    messageEl.classList.add('glitch');
+    setTimeout(() => messageEl.classList.remove('glitch'), 500);
+  }
+}
+
+function randomGlitchEffects() {
+  if (Math.random() < 0.4) {
+    document.body.style.animation = "screenGlitch 0.2s steps(1, end)";
+    setTimeout(() => {
+      document.body.style.animation = "";
+    }, 200);
+  }
+
+  const buttons = document.querySelectorAll('button');
+  buttons.forEach(btn => {
+    if (Math.random() < 0.4) {
+      btn.classList.add('glitch');
+      setTimeout(() => btn.classList.remove('glitch'), 500);
     }
+  });
+}
 
-    const steps = [
-      { text: "Du hast mich nicht ohne Grund gefunden" },
-      { text: "Wir müssen reden!" },
-      { text: "Aber erst einmal muss ich zu dir Vertrauen aufbauen!" },
-      {
-        text: "Hast du Angst?",
-        buttons: [
-          { label: "Ja", next: () => console.log("Antwort: Ja (Angst)") },
-          { label: "Nein", next: () => console.log("Antwort: Nein (keine Angst)") }
-        ]
-      },
-      { text: "Merke dir, mich nie anzulügen!" },
-      {
-        text: `Stimmt es, dass du gerade auf einem ${actualDevice} unterwegs bist?`,
-        buttons: [
-          { label: "Ja" },
-          { label: "Nein", next: () => { state.deviceMismatch = true; } }
-        ]
-      },
-      {
-        text: "Bist du allein?",
-        buttons: [
-          { label: "Ja" },
-          { label: "Nein" }
-        ]
-      },
-      {
-        text: `Stimmt es, dass es gerade ${approxTime} Uhr ist?`,
-        buttons: [
-          { label: "Ja" },
-          { label: "Nein", next: () => { state.timeMismatch = true; } }
-        ]
-      },
-      {
-        text: "Stimmt es, dass du gerade nicht draußen unterwegs bist?",
-        buttons: [
-          { label: "Ja", next: showFinal },
-          { label: "Nein", next: showFinal }
-        ]
-      }
-    ];
+function showStep() {
+  const step = steps[currentStep];
+  messageEl.classList.remove('visible');
+  buttonsEl.innerHTML = "";
 
-    let currentStep = 0;
+  setTimeout(() => {
+    showGlitchEffect();
+    randomGlitchEffects();
 
-    function showGlitchEffect() {
-      if (Math.random() < 0.4) {
-        messageEl.classList.add('glitch');
-        setTimeout(() => messageEl.classList.remove('glitch'), 500);
-      }
-    }
+    messageEl.textContent = step.text;
+    messageEl.classList.add('visible');
 
-    function randomGlitchEffects() {
-      if (Math.random() < 0.4) {
-        document.body.style.animation = "screenGlitch 0.2s steps(1, end)";
-        setTimeout(() => {
-          document.body.style.animation = "";
-        }, 200);
-      }
+    if (step.buttons) {
+      step.buttons.forEach(btn => {
+        const button = document.createElement('button');
+        button.textContent = btn.label;
 
-      const buttons = document.querySelectorAll('button');
-      buttons.forEach(btn => {
-        if (Math.random() < 0.4) {
-          btn.classList.add('glitch');
-          setTimeout(() => btn.classList.remove('glitch'), 500);
-        }
-      });
-    }
+        button.addEventListener('click', () => {
+          buttonsEl.querySelectorAll('button').forEach(b => b.disabled = true);
 
-    function showStep() {
-      const step = steps[currentStep];
-      messageEl.classList.remove('visible');
-      buttonsEl.innerHTML = "";
+          if (typeof btn.next === "function") btn.next();
 
-      setTimeout(() => {
-        showGlitchEffect();
-        randomGlitchEffects();
-
-        messageEl.textContent = step.text;
-        messageEl.classList.add('visible');
-
-        if (step.buttons) {
-          step.buttons.forEach(btn => {
-            const button = document.createElement('button');
-            button.textContent = btn.label;
-
-            button.addEventListener('click', () => {
-              button.disabled = true;
-              buttonsEl.querySelectorAll('button').forEach(b => b.disabled = true);
-
-              if (typeof btn.next === "function") btn.next();
-
-              currentStep++;
-              setTimeout(showStep, 1000);
-            });
-
-            buttonsEl.appendChild(button);
-          });
-        } else {
           currentStep++;
-          setTimeout(showStep, 2000);
-        }
-      }, 300); // Minimales Delay
+          setTimeout(showStep, 2000); // ⏱ Nächste Frage kommt nach 2 Sekunden
+        });
+
+        buttonsEl.appendChild(button);
+      });
+    } else {
+      currentStep++;
+      setTimeout(showStep, 2000);
     }
+  }, 300);
+}
 
-    function showFinal() {
-      messageEl.classList.remove('visible');
-      buttonsEl.innerHTML = "";
+function showFinal() {
+  messageEl.classList.remove('visible');
+  buttonsEl.innerHTML = "";
 
-      setTimeout(() => {
-        if (state.deviceMismatch || state.timeMismatch) {
-          messageEl.textContent = "Ich schätze, dass du nicht für mich geeignet bist.";
-        } else {
-          messageEl.textContent = "Überstanden";
-        }
-        messageEl.classList.add('visible');
-      }, 1000);
+  setTimeout(() => {
+    if (state.deviceMismatch || state.timeMismatch) {
+      messageEl.textContent = "Ich schätze, dass du nicht für mich geeignet bist.";
+    } else {
+      messageEl.textContent = "Überstanden";
     }
+    messageEl.classList.add('visible');
+  }, 2000);
+}
 
-    setTimeout(showStep, 1000);
+setTimeout(showStep, 1000);
   </script>
 </body>
 </html>
