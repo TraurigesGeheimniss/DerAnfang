@@ -39,7 +39,7 @@
     const messageEl = document.getElementById('message');
     let messages = [];
     let index = 0;
-    let delay = 6000; // 6 Sekunden zwischen den Nachrichten
+    let delay = 6000;
 
     function showNextMessage() {
       messageEl.classList.remove('visible');
@@ -72,14 +72,20 @@
 
     function getLocationName(lat, lon) {
       const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
-      fetch(url)
+      fetch(url, {
+        headers: {
+          'Accept': 'application/json',
+        }
+      })
         .then(response => response.json())
         .then(data => {
-          const locationName = data.address.city || data.address.town || data.address.village || data.address.county || "deinem Ort";
-          prepareMessages(locationName);
+          let loc = data?.address?.city || data?.address?.town || data?.address?.village || data?.address?.county || null;
+          if (!loc) loc = "deinem Ort";
+          prepareMessages(loc);
         })
-        .catch(() => {
-          prepareMessages("deinem Ort");
+        .catch((error) => {
+          console.warn('Fehler beim Ort-Abruf:', error);
+          prepareMessages("einem unbekannten Ort");
         });
     }
 
@@ -90,7 +96,8 @@
             const { latitude, longitude } = position.coords;
             getLocationName(latitude, longitude);
           },
-          () => {
+          (error) => {
+            console.warn('Geostandort verweigert oder fehlgeschlagen:', error);
             prepareMessages("einem unbekannten Ort");
           }
         );
