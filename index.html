@@ -23,44 +23,135 @@
 
     .message {
       opacity: 0;
-      transition: opacity 2s;
+      transition: opacity 1.5s;
+      margin: 20px;
     }
 
     .visible {
       opacity: 1;
     }
+
+    .buttons {
+      margin-top: 20px;
+    }
+
+    button {
+      background-color: #220000;
+      color: #ff3333;
+      font-size: 1em;
+      padding: 10px 20px;
+      margin: 10px;
+      border: 2px solid #ff3333;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #ff3333;
+      color: #000;
+    }
   </style>
 </head>
 <body>
-  <div class="message" id="message">Willkommen zurück...</div>
+  <div class="message" id="message">...</div>
+  <div class="buttons" id="buttons"></div>
 
   <script>
-    const messages = [
-      () => `Dein Browser ist: ${navigator.userAgent}`,
-      () => `Dein System: ${navigator.platform}`,
-      () => `Bildschirmgröße: ${screen.width}x${screen.height}`,
-      () => `Aktuelle Uhrzeit: ${new Date().toLocaleTimeString()}`,
-      () => `Du hast mich nicht zufällig gefunden...`,
-      () => `Ich sehe, du hast diesen Tab schon ${performance.now().toFixed(0)} Millisekunden offen...`,
-      () => `Warum bist du hier?`,
-      () => `Du bist nicht allein.`,
+    const messageEl = document.getElementById('message');
+    const buttonsEl = document.getElementById('buttons');
+
+    const state = {
+      deviceMismatch: false,
+      timeMismatch: false
+    };
+
+    const actualDevice = navigator.userAgent.includes("Mobile") ? "Handy" : "Computer";
+    const approxTime = new Date(Date.now() + (Math.random() * 10 + 2) * 60000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+    const steps = [
+      { text: "Du hast mich nicht ohne Grund gefunden" },
+      { text: "Wir müssen reden!" },
+      { text: "Aber erst einmal muss ich zu dir Vertrauen aufbauen!" },
+      {
+        text: "Hast du Angst?",
+        buttons: [
+          { label: "Ja", next: () => {} },
+          { label: "Nein", next: () => {} }
+        ]
+      },
+      { text: "Merke dir, mich nie anzulügen!" },
+      {
+        text: `Stimmt es, dass du gerade auf einem ${actualDevice} unterwegs bist?`,
+        buttons: [
+          { label: "Ja", next: () => {} },
+          { label: "Nein", next: () => { state.deviceMismatch = true; } }
+        ]
+      },
+      {
+        text: "Bist du allein?",
+        buttons: [
+          { label: "Ja", next: () => {} },
+          { label: "Nein", next: () => {} }
+        ]
+      },
+      {
+        text: `Stimmt es, dass es gerade ${approxTime} Uhr ist?`,
+        buttons: [
+          { label: "Ja", next: () => {} },
+          { label: "Nein", next: () => { state.timeMismatch = true; } }
+        ]
+      },
+      {
+        text: "Stimmt es, dass du gerade nicht draußen unterwegs bist?",
+        buttons: [
+          { label: "Ja", next: showFinal },
+          { label: "Nein", next: showFinal }
+        ]
+      }
     ];
 
-    let index = 0;
-    const messageEl = document.getElementById('message');
+    let currentStep = 0;
 
-    function showNextMessage() {
+    function showStep() {
+      const step = steps[currentStep];
       messageEl.classList.remove('visible');
+      buttonsEl.innerHTML = "";
+
       setTimeout(() => {
-        messageEl.textContent = messages[index % messages.length]();
+        messageEl.textContent = step.text;
         messageEl.classList.add('visible');
-        index++;
+
+        if (step.buttons) {
+          step.buttons.forEach(btn => {
+            const button = document.createElement('button');
+            button.textContent = btn.label;
+            button.onclick = () => {
+              btn.next();
+              currentStep++;
+              setTimeout(showStep, 500);
+            };
+            buttonsEl.appendChild(button);
+          });
+        } else {
+          currentStep++;
+          setTimeout(showStep, 2500);
+        }
       }, 1000);
     }
 
-    setInterval(showNextMessage, 5000);
-    // Erste Nachricht direkt anzeigen
-    setTimeout(() => messageEl.classList.add('visible'), 1000);
+    function showFinal() {
+      messageEl.classList.remove('visible');
+      buttonsEl.innerHTML = "";
+      setTimeout(() => {
+        if (state.deviceMismatch || state.timeMismatch) {
+          messageEl.textContent = "Ich schätze, dass du nicht für mich geeignet bist.";
+        } else {
+          messageEl.textContent = "Überstanden";
+        }
+        messageEl.classList.add('visible');
+      }, 1000);
+    }
+
+    setTimeout(showStep, 1000);
   </script>
 </body>
 </html>
