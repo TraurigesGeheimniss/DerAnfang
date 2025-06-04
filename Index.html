@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ich sehe dich.</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap');
+
+    body {
+      background-color: black;
+      color: #ff3333;
+      font-family: 'UnifrakturCook', cursive;
+      font-size: 2em;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      overflow: hidden;
+      text-align: center;
+    }
+
+    .message {
+      opacity: 0;
+      transition: opacity 2s;
+    }
+
+    .visible {
+      opacity: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="message" id="message">Willkommen zurück...</div>
+
+  <script>
+    const messages = [
+      () => `Dein Browser ist: ${navigator.userAgent}`,
+      () => `Dein System: ${navigator.platform}`,
+      () => `Bildschirmgröße: ${screen.width}x${screen.height}`,
+      () => `Aktuelle Uhrzeit: ${new Date().toLocaleTimeString()}`,
+      () => `Du hast mich nicht zufällig gefunden...`,
+      () => `Ich sehe, du hast diesen Tab schon ${performance.now().toFixed(0)} Millisekunden offen...`,
+      () => `Warum bist du hier?`,
+      () => `Du bist nicht allein.`,
+    ];
+
+    let index = 0;
+    const messageEl = document.getElementById('message');
+
+    function showNextMessage() {
+      messageEl.classList.remove('visible');
+      setTimeout(() => {
+        messageEl.textContent = messages[index % messages.length]();
+        messageEl.classList.add('visible');
+        index++;
+      }, 1000);
+    }
+
+    setInterval(showNextMessage, 5000);
+    // Erste Nachricht direkt anzeigen
+    setTimeout(() => messageEl.classList.add('visible'), 1000);
+  </script>
+</body>
+</html>
