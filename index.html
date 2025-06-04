@@ -11,15 +11,20 @@
       background-color: black;
       color: #ff3333;
       font-family: 'UnifrakturCook', cursive;
-      font-size: 1.5em;
-      padding: 2rem;
-      line-height: 1.6;
-      overflow-y: scroll;
+      font-size: 2em;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      overflow: hidden;
+      text-align: center;
     }
 
-    .line {
+    #message {
       opacity: 0;
-      transition: opacity 1s;
+      transition: opacity 2s;
+      max-width: 90%;
     }
 
     .visible {
@@ -28,38 +33,54 @@
   </style>
 </head>
 <body>
-  <div id="container">
-    <div class="line visible">Du hättest diese Seite nicht öffnen sollen...</div>
-  </div>
+  <div id="message">Du hast mich nicht ohne Grund besucht...</div>
 
   <script>
-    const container = document.getElementById('container');
-    const startTime = performance.now();
-    const messages = [];
+    const messageEl = document.getElementById('message');
+    let messages = [];
+    let index = 0;
+    let delay = 6000; // 6 Sekunden zwischen den Nachrichten
 
-    function addMessage(text) {
-      const div = document.createElement('div');
-      div.className = 'line';
-      div.textContent = text;
-      container.appendChild(div);
-      setTimeout(() => div.classList.add('visible'), 100);
+    function showNextMessage() {
+      messageEl.classList.remove('visible');
+      setTimeout(() => {
+        messageEl.textContent = messages[index];
+        messageEl.classList.add('visible');
+        index++;
+        if (index < messages.length) {
+          setTimeout(showNextMessage, delay);
+        }
+      }, 1000);
     }
 
-    function collectData() {
-      messages.push(`Browser: ${navigator.userAgent}`);
-      messages.push(`Sprache: ${navigator.language}`);
-      messages.push(`Plattform: ${navigator.platform}`);
-      messages.push(`Bildschirmgröße: ${screen.width}x${screen.height}`);
-      messages.push(`Zeitzone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}`);
-      messages.push(`Aktuelle Zeit: ${new Date().toLocaleTimeString()}`);
-      messages.push(`Seit ${Math.floor(performance.now() / 1000)} Sekunden geöffnet...`);
+    function prepareMessages(locationName = 'deinem Ort') {
+      messages = [
+        "Du hast mich nicht ohne Grund besucht.",
+        `Stimmt es, dass du in ${locationName} wohnst?`,
+        "Haha… jetzt hab ich dich beeindruckt.",
+        "Ich weiß noch viel mehr über dich...",
+        `Dein Browser: ${navigator.userAgent}`,
+        `Dein System: ${navigator.platform}`,
+        `Deine Sprache: ${navigator.language}`,
+        `Deine Uhrzeit: ${new Date().toLocaleTimeString()}`,
+        `Dein Bildschirm: ${screen.width}x${screen.height}`,
+        "Du kannst dich nicht verstecken...",
+        "Ich bin schon da.",
+      ];
+      setTimeout(showNextMessage, delay);
     }
 
-    function getIP() {
-      fetch('https://api.ipify.org?format=json')
+    function getLocationName(lat, lon) {
+      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
+      fetch(url)
         .then(response => response.json())
-        .then(data => messages.push(`IP-Adresse: ${data.ip}`))
-        .catch(() => messages.push('IP-Adresse konnte nicht ermittelt werden'));
+        .then(data => {
+          const locationName = data.address.city || data.address.town || data.address.village || data.address.county || "deinem Ort";
+          prepareMessages(locationName);
+        })
+        .catch(() => {
+          prepareMessages("deinem Ort");
+        });
     }
 
     function getGeolocation() {
@@ -67,31 +88,20 @@
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
-            messages.push(`Standort (ungefähr): Breitengrad ${latitude.toFixed(4)}, Längengrad ${longitude.toFixed(4)}`);
+            getLocationName(latitude, longitude);
           },
-          (error) => {
-            messages.push('Standortzugriff verweigert...');
+          () => {
+            prepareMessages("einem unbekannten Ort");
           }
         );
       } else {
-        messages.push('Geostandort nicht unterstützt');
+        prepareMessages("einem Ort außerhalb meiner Reichweite");
       }
     }
 
-    collectData();
-    getIP();
+    // Start
+    messageEl.classList.add('visible');
     getGeolocation();
-
-    let index = 0;
-    setInterval(() => {
-      if (index < messages.length) {
-        addMessage(messages[index]);
-        index++;
-      } else {
-        const now = new Date().toLocaleTimeString();
-        addMessage(`Du bist immer noch hier... (${now})`);
-      }
-    }, 4000);
   </script>
 </body>
 </html>
