@@ -1,5 +1,3 @@
-Da sind ein paar buggs oder?
-
 <!DOCTYPE html>
 <html lang="de">
 <head>
@@ -7,13 +5,13 @@ Da sind ein paar buggs oder?
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ich sehe dich.</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Nosifer&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Creepster&family=Nosifer&display=swap');
 
     body {
       background-color: black;
-      color: #ff0000;
-      font-family: 'Nosifer', cursive;
-      font-size: 2em;
+      color: #aa4444;
+      font-family: 'Creepster', 'Nosifer', cursive;
+      font-size: 1.3em;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -39,22 +37,24 @@ Da sind ein paar buggs oder?
 
     button {
       background-color: #220000;
-      color: #ff4444;
-      font-size: 1.1em;
-      padding: 12px 30px;
+      color: #aa4444;
+      font-size: 0.9em;
+      padding: 8px 20px;
       margin: 10px;
-      border: 2px solid #ff4444;
-      font-family: 'Nosifer', cursive;
+      border: 2px dashed #aa4444;
+      font-family: 'Creepster', 'Nosifer', cursive;
       cursor: pointer;
+      user-select: none;
+      touch-action: manipulation;
       letter-spacing: 1px;
-      animation: flicker 2s infinite;
-      transition: transform 0.2s;
+      transform: skewX(-10deg) rotate(-1deg);
+      animation: flicker 2s infinite, bugShape 1s infinite alternate;
     }
 
     button:hover {
-      background-color: #ff4444;
+      background-color: #aa4444;
       color: #000;
-      transform: scale(1.05);
+      transform: scale(1.05) rotate(2deg);
     }
 
     @keyframes flicker {
@@ -64,6 +64,11 @@ Da sind ein paar buggs oder?
       20%, 24%, 55% {
         opacity: 0.5;
       }
+    }
+
+    @keyframes bugShape {
+      0% { transform: skewX(-10deg) rotate(-1deg); }
+      100% { transform: skewX(5deg) rotate(2deg); }
     }
 
     @keyframes glitch {
@@ -88,123 +93,126 @@ Da sind ein paar buggs oder?
   <div class="buttons" id="buttons"></div>
 
   <script>
-  const messageEl = document.getElementById('message');
-  const buttonsEl = document.getElementById('buttons');
+    const messageEl = document.getElementById('message');
+    const buttonsEl = document.getElementById('buttons');
 
-  const state = {
-    deviceMismatch: false,
-    timeMismatch: false
-  };
+    const state = {
+      deviceMismatch: false,
+      timeMismatch: false
+    };
 
-  const actualDevice = navigator.userAgent.toLowerCase().includes("mobile") ? "Handy" : "Computer";
-  let approxTime;
+    const actualDevice = navigator.userAgent.toLowerCase().includes("mobile") ? "Handy" : "Computer";
 
-  try {
-    approxTime = new Date(Date.now() + (Math.random() * 10 + 2) * 60000)
-      .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  } catch (e) {
-    approxTime = "unbekannt";
-  }
-
-  const steps = [
-    { text: "Du hast mich nicht ohne Grund gefunden" },
-    { text: "Wir müssen reden!" },
-    { text: "Aber erst einmal muss ich zu dir Vertrauen aufbauen!" },
-    {
-      text: "Hast du Angst?",
-      buttons: [
-        { label: "Ja", next: () => console.log("Antwort: Ja (Angst)") },
-        { label: "Nein", next: () => console.log("Antwort: Nein (keine Angst)") }
-      ]
-    },
-    { text: "Merke dir, mich nie anzulügen!" },
-    {
-      text: `Stimmt es, dass du gerade auf einem ${actualDevice} unterwegs bist?`,
-      buttons: [
-        { label: "Ja" },
-        { label: "Nein", next: () => { state.deviceMismatch = true; } }
-      ]
-    },
-    {
-      text: "Bist du allein?",
-      buttons: [
-        { label: "Ja" },
-        { label: "Nein" }
-      ]
-    },
-    {
-      text: `Stimmt es, dass es gerade ${approxTime} Uhr ist?`,
-      buttons: [
-        { label: "Ja" },
-        { label: "Nein", next: () => { state.timeMismatch = true; } }
-      ]
-    },
-    {
-      text: "Stimmt es, dass du gerade nicht draußen unterwegs bist?",
-      buttons: [
-        { label: "Ja", next: showFinal },
-        { label: "Nein", next: showFinal }
-      ]
+    let approxTime;
+    try {
+      approxTime = new Date(Date.now() + (Math.random() * 10 + 2) * 60000)
+        .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      approxTime = "unbekannt";
     }
-  ];
 
-  let currentStep = 0;
-
-  function showGlitchEffect() {
-    if (Math.random() < 0.3) {
-      messageEl.classList.add('glitch');
-      setTimeout(() => messageEl.classList.remove('glitch'), 500);
-    }
-  }
-
-  function showStep() {
-    const step = steps[currentStep];
-    messageEl.classList.remove('visible');
-    buttonsEl.innerHTML = "";
-
-    setTimeout(() => {
-      showGlitchEffect();
-      setTimeout(() => {
-        messageEl.textContent = step.text;
-        messageEl.classList.add('visible');
-
-        if (step.buttons) {
-          step.buttons.forEach(btn => {
-            const button = document.createElement('button');
-            button.textContent = btn.label;
-            button.onclick = () => {
-              // Buttons deaktivieren, um Mehrfachklicks zu verhindern
-              buttonsEl.querySelectorAll('button').forEach(b => b.disabled = true);
-
-              if (typeof btn.next === "function") btn.next();
-              currentStep++;
-              setTimeout(showStep, 3000);
-            };
-            buttonsEl.appendChild(button);
-          });
-        } else {
-          currentStep++;
-          setTimeout(showStep, 3000);
-        }
-      }, 200); // Verzögerung für Text nach Glitch
-    }, 1000);
-  }
-
-  function showFinal() {
-    messageEl.classList.remove('visible');
-    buttonsEl.innerHTML = "";
-
-    setTimeout(() => {
-      if (state.deviceMismatch || state.timeMismatch) {
-        messageEl.textContent = "Ich schätze, dass du nicht für mich geeignet bist.";
-      } else {
-        messageEl.textContent = "Überstanden";
+    const steps = [
+      { text: "Du hast mich nicht ohne Grund gefunden" },
+      { text: "Wir müssen reden!" },
+      { text: "Aber erst einmal muss ich zu dir Vertrauen aufbauen!" },
+      {
+        text: "Hast du Angst?",
+        buttons: [
+          { label: "Ja", next: () => console.log("Antwort: Ja (Angst)") },
+          { label: "Nein", next: () => console.log("Antwort: Nein (keine Angst)") }
+        ]
+      },
+      { text: "Merke dir, mich nie anzulügen!" },
+      {
+        text: `Stimmt es, dass du gerade auf einem ${actualDevice} unterwegs bist?`,
+        buttons: [
+          { label: "Ja" },
+          { label: "Nein", next: () => { state.deviceMismatch = true; } }
+        ]
+      },
+      {
+        text: "Bist du allein?",
+        buttons: [
+          { label: "Ja" },
+          { label: "Nein" }
+        ]
+      },
+      {
+        text: `Stimmt es, dass es gerade ${approxTime} Uhr ist?`,
+        buttons: [
+          { label: "Ja" },
+          { label: "Nein", next: () => { state.timeMismatch = true; } }
+        ]
+      },
+      {
+        text: "Stimmt es, dass du gerade nicht draußen unterwegs bist?",
+        buttons: [
+          { label: "Ja", next: showFinal },
+          { label: "Nein", next: showFinal }
+        ]
       }
-      messageEl.classList.add('visible');
-    }, 1000);
-  }
+    ];
 
-  setTimeout(showStep, 1000);
-</script>
+    let currentStep = 0;
+
+    function showGlitchEffect() {
+      if (Math.random() < 0.3) {
+        messageEl.classList.add('glitch');
+        setTimeout(() => messageEl.classList.remove('glitch'), 500);
+      }
+    }
+
+    function showStep() {
+      const step = steps[currentStep];
+      messageEl.classList.remove('visible');
+      buttonsEl.innerHTML = "";
+
+      setTimeout(() => {
+        showGlitchEffect();
+        setTimeout(() => {
+          messageEl.textContent = step.text;
+          messageEl.classList.add('visible');
+
+          if (step.buttons) {
+            step.buttons.forEach(btn => {
+              const button = document.createElement('button');
+              button.textContent = btn.label;
+
+              button.addEventListener('click', () => {
+                button.disabled = true;
+                buttonsEl.querySelectorAll('button').forEach(b => b.disabled = true);
+
+                if (typeof btn.next === "function") btn.next();
+
+                currentStep++;
+                setTimeout(showStep, 2000); // Verzögerung nach Klick
+              });
+
+              buttonsEl.appendChild(button);
+            });
+          } else {
+            currentStep++;
+            setTimeout(showStep, 2000);
+          }
+        }, 500); // Glitch-Delay
+      }, 1000);
+    }
+
+    function showFinal() {
+      messageEl.classList.remove('visible');
+      buttonsEl.innerHTML = "";
+
+      setTimeout(() => {
+        if (state.deviceMismatch || state.timeMismatch) {
+          messageEl.textContent = "Ich schätze, dass du nicht für mich geeignet bist.";
+        } else {
+          messageEl.textContent = "Überstanden";
+        }
+        messageEl.classList.add('visible');
+      }, 1000);
+    }
+
+    setTimeout(showStep, 1000);
+  </script>
 </body>
 </html>
