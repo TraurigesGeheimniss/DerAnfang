@@ -39,7 +39,7 @@
     const messageEl = document.getElementById('message');
     let messages = [];
     let index = 0;
-    let delay = 6000;
+    const delay = 6000;
 
     function showNextMessage() {
       messageEl.classList.remove('visible');
@@ -53,10 +53,10 @@
       }, 1000);
     }
 
-    function prepareMessages(locationName = 'deinem Ort') {
+    function prepareMessages(coordsText = 'einem unbekannten Ort') {
       messages = [
         "Du hast mich nicht ohne Grund besucht.",
-        `Stimmt es, dass du in ${locationName} wohnst?`,
+        `Ich weiß, wo du bist: ${coordsText}`,
         "Haha… jetzt hab ich dich beeindruckt.",
         "Ich weiß noch viel mehr über dich...",
         `Dein Browser: ${navigator.userAgent}`,
@@ -70,34 +70,15 @@
       setTimeout(showNextMessage, delay);
     }
 
-    function getLocationName(lat, lon) {
-      const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`;
-      fetch(url, {
-        headers: {
-          'Accept': 'application/json',
-        }
-      })
-        .then(response => response.json())
-        .then(data => {
-          let loc = data?.address?.city || data?.address?.town || data?.address?.village || data?.address?.county || null;
-          if (!loc) loc = "deinem Ort";
-          prepareMessages(loc);
-        })
-        .catch((error) => {
-          console.warn('Fehler beim Ort-Abruf:', error);
-          prepareMessages("einem unbekannten Ort");
-        });
-    }
-
     function getGeolocation() {
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
             const { latitude, longitude } = position.coords;
-            getLocationName(latitude, longitude);
+            const coordsText = `Breite: ${latitude.toFixed(4)}, Länge: ${longitude.toFixed(4)}`;
+            prepareMessages(coordsText);
           },
-          (error) => {
-            console.warn('Geostandort verweigert oder fehlgeschlagen:', error);
+          () => {
             prepareMessages("einem unbekannten Ort");
           }
         );
