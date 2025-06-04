@@ -5,12 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ich sehe dich.</title>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=UnifrakturCook:wght@700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Nosifer&display=swap');
 
     body {
       background-color: black;
-      color: #ff3333;
-      font-family: 'UnifrakturCook', cursive;
+      color: #ff0000;
+      font-family: 'Nosifer', cursive;
       font-size: 2em;
       display: flex;
       flex-direction: column;
@@ -37,17 +37,47 @@
 
     button {
       background-color: #220000;
-      color: #ff3333;
-      font-size: 1em;
-      padding: 10px 20px;
+      color: #ff4444;
+      font-size: 1.1em;
+      padding: 12px 30px;
       margin: 10px;
-      border: 2px solid #ff3333;
+      border: 2px solid #ff4444;
+      font-family: 'Nosifer', cursive;
       cursor: pointer;
+      letter-spacing: 1px;
+      animation: flicker 2s infinite;
+      transition: transform 0.2s;
     }
 
     button:hover {
-      background-color: #ff3333;
+      background-color: #ff4444;
       color: #000;
+      transform: scale(1.05);
+    }
+
+    @keyframes flicker {
+      0%, 18%, 22%, 25%, 53%, 57%, 100% {
+        opacity: 1;
+      }
+      20%, 24%, 55% {
+        opacity: 0.5;
+      }
+    }
+
+    @keyframes glitch {
+      0% {
+        text-shadow: 2px 0 red, -2px 0 blue;
+      }
+      50% {
+        text-shadow: -2px 0 red, 2px 0 blue;
+      }
+      100% {
+        text-shadow: 2px 0 red, -2px 0 blue;
+      }
+    }
+
+    .glitch {
+      animation: glitch 0.3s steps(2, end) infinite;
     }
   </style>
 </head>
@@ -64,7 +94,7 @@
       timeMismatch: false
     };
 
-    const actualDevice = navigator.userAgent.includes("Mobile") ? "Handy" : "Computer";
+    const actualDevice = navigator.userAgent.toLowerCase().includes("mobile") ? "Handy" : "Computer";
     const approxTime = new Date(Date.now() + (Math.random() * 10 + 2) * 60000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
     const steps = [
@@ -111,12 +141,20 @@
 
     let currentStep = 0;
 
+    function showGlitchEffect() {
+      if (Math.random() < 0.3) {
+        messageEl.classList.add('glitch');
+        setTimeout(() => messageEl.classList.remove('glitch'), 500);
+      }
+    }
+
     function showStep() {
       const step = steps[currentStep];
       messageEl.classList.remove('visible');
       buttonsEl.innerHTML = "";
 
       setTimeout(() => {
+        showGlitchEffect();
         messageEl.textContent = step.text;
         messageEl.classList.add('visible');
 
@@ -127,13 +165,13 @@
             button.onclick = () => {
               btn.next();
               currentStep++;
-              setTimeout(showStep, 500);
+              setTimeout(showStep, 3000);
             };
             buttonsEl.appendChild(button);
           });
         } else {
           currentStep++;
-          setTimeout(showStep, 2500);
+          setTimeout(showStep, 3000);
         }
       }, 1000);
     }
@@ -141,6 +179,7 @@
     function showFinal() {
       messageEl.classList.remove('visible');
       buttonsEl.innerHTML = "";
+
       setTimeout(() => {
         if (state.deviceMismatch || state.timeMismatch) {
           messageEl.textContent = "Ich schätze, dass du nicht für mich geeignet bist.";
