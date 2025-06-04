@@ -23,12 +23,14 @@
 
     .message {
       opacity: 0;
-      transition: opacity 1.5s;
+      transition: opacity 1.2s ease-in-out;
       margin: 20px;
+      pointer-events: none;
     }
 
-    .visible {
+    .message.visible {
       opacity: 1;
+      pointer-events: auto;
     }
 
     .buttons {
@@ -57,13 +59,13 @@
       transform: scale(1.05) rotate(2deg);
     }
 
+    button.glitch {
+      animation: flicker 2s infinite, bugShape 1s infinite alternate, buttonGlitch 0.3s steps(2, end) infinite;
+    }
+
     @keyframes flicker {
-      0%, 18%, 22%, 25%, 53%, 57%, 100% {
-        opacity: 1;
-      }
-      20%, 24%, 55% {
-        opacity: 0.5;
-      }
+      0%, 18%, 22%, 25%, 53%, 57%, 100% { opacity: 1; }
+      20%, 24%, 55% { opacity: 0.5; }
     }
 
     @keyframes bugShape {
@@ -72,19 +74,27 @@
     }
 
     @keyframes glitch {
-      0% {
-        text-shadow: 2px 0 red, -2px 0 blue;
-      }
-      50% {
-        text-shadow: -2px 0 red, 2px 0 blue;
-      }
-      100% {
-        text-shadow: 2px 0 red, -2px 0 blue;
-      }
+      0%   { text-shadow: 2px 0 red, -2px 0 blue; }
+      50%  { text-shadow: -2px 0 red, 2px 0 blue; }
+      100% { text-shadow: 2px 0 red, -2px 0 blue; }
     }
 
     .glitch {
       animation: glitch 0.3s steps(2, end) infinite;
+    }
+
+    @keyframes buttonGlitch {
+      0%   { transform: translate(0, 0) skewX(-10deg); }
+      25%  { transform: translate(2px, -2px) skewX(-8deg); }
+      50%  { transform: translate(-2px, 2px) skewX(-12deg); }
+      75%  { transform: translate(1px, 1px) skewX(-9deg); }
+      100% { transform: translate(0, 0) skewX(-10deg); }
+    }
+
+    @keyframes screenGlitch {
+      0%   { background-color: black; }
+      50%  { background-color: #111; }
+      100% { background-color: black; }
     }
   </style>
 </head>
@@ -156,10 +166,27 @@
     let currentStep = 0;
 
     function showGlitchEffect() {
-      if (Math.random() < 0.3) {
+      if (Math.random() < 0.4) {
         messageEl.classList.add('glitch');
         setTimeout(() => messageEl.classList.remove('glitch'), 500);
       }
+    }
+
+    function randomGlitchEffects() {
+      if (Math.random() < 0.4) {
+        document.body.style.animation = "screenGlitch 0.2s steps(1, end)";
+        setTimeout(() => {
+          document.body.style.animation = "";
+        }, 200);
+      }
+
+      const buttons = document.querySelectorAll('button');
+      buttons.forEach(btn => {
+        if (Math.random() < 0.4) {
+          btn.classList.add('glitch');
+          setTimeout(() => btn.classList.remove('glitch'), 500);
+        }
+      });
     }
 
     function showStep() {
@@ -169,33 +196,33 @@
 
       setTimeout(() => {
         showGlitchEffect();
-        setTimeout(() => {
-          messageEl.textContent = step.text;
-          messageEl.classList.add('visible');
+        randomGlitchEffects();
 
-          if (step.buttons) {
-            step.buttons.forEach(btn => {
-              const button = document.createElement('button');
-              button.textContent = btn.label;
+        messageEl.textContent = step.text;
+        messageEl.classList.add('visible');
 
-              button.addEventListener('click', () => {
-                button.disabled = true;
-                buttonsEl.querySelectorAll('button').forEach(b => b.disabled = true);
+        if (step.buttons) {
+          step.buttons.forEach(btn => {
+            const button = document.createElement('button');
+            button.textContent = btn.label;
 
-                if (typeof btn.next === "function") btn.next();
+            button.addEventListener('click', () => {
+              button.disabled = true;
+              buttonsEl.querySelectorAll('button').forEach(b => b.disabled = true);
 
-                currentStep++;
-                setTimeout(showStep, 2000); // Verzögerung nach Klick
-              });
+              if (typeof btn.next === "function") btn.next();
 
-              buttonsEl.appendChild(button);
+              currentStep++;
+              setTimeout(showStep, 1000);
             });
-          } else {
-            currentStep++;
-            setTimeout(showStep, 2000);
-          }
-        }, 500); // Glitch-Delay
-      }, 1000);
+
+            buttonsEl.appendChild(button);
+          });
+        } else {
+          currentStep++;
+          setTimeout(showStep, 2000);
+        }
+      }, 300); // Minimales Delay
     }
 
     function showFinal() {
