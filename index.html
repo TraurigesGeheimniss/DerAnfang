@@ -1,25 +1,31 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Nachrichten-Portal</title>
+  <style>
+    body { font-family: sans-serif; margin: 2em; }
+    input, textarea { width: 100%; max-width: 400px; margin: 5px 0; padding: 8px; }
+    button { margin: 10px 0; padding: 10px; }
+    #messages p { border-bottom: 1px solid #ccc; padding: 4px 0; }
+  </style>
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
-    const supabaseUrl = 'https://wxvpqpmmqlwogevypndw.supabase.co'
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4dnBxcG1tcWx3b2dldnlwbmR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMTQxMDQsImV4cCI6MjA2NDY5MDEwNH0.t7HsLa7ZS1OBUtvLiM5IStAwMZjqy_WZ2B-s2SYn32I'
-    const supabase = createClient(supabaseUrl, supabaseKey)
-
-    // DOM-Elemente
-    let loginForm, signupForm, logoutBtn, messagesDiv, personalLinkDiv
+    const supabase = createClient(
+      'https://wxvpqpmmqlwogevypndw.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4dnBxcG1tcWx3b2dldnlwbmR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMTQxMDQsImV4cCI6MjA2NDY5MDEwNH0.t7HsLa7ZS1OBUtvLiM5IStAwMZjqy_WZ2B-s2SYn32I'
+    )
 
     async function checkUser() {
-      const user = supabase.auth.user()
+      const { data: { session } } = await supabase.auth.getSession()
+      const user = session?.user
+
       if (user) {
         document.getElementById('auth-section').style.display = 'none'
         document.getElementById('app-section').style.display = 'block'
-        await loadMessages(user.id)
         showPersonalLink(user.id)
+        loadMessages(user.id)
       } else {
         document.getElementById('auth-section').style.display = 'block'
         document.getElementById('app-section').style.display = 'none'
@@ -33,40 +39,33 @@
         .eq('to_user_id', userId)
         .order('created_at', { ascending: false })
 
+      const container = document.getElementById('messages')
+      container.innerHTML = ''
+
       if (error) {
-        messagesDiv.textContent = 'Fehler beim Laden der Nachrichten.'
-        console.error(error)
+        container.textContent = 'Fehler beim Laden der Nachrichten.'
         return
       }
 
-      if (data.length === 0) {
-        messagesDiv.textContent = 'Keine Nachrichten vorhanden.'
+      if (!data || data.length === 0) {
+        container.textContent = 'Keine Nachrichten vorhanden.'
         return
       }
 
-      messagesDiv.innerHTML = ''
       data.forEach(msg => {
         const p = document.createElement('p')
         p.textContent = `${new Date(msg.created_at).toLocaleString()}: ${msg.text}`
-        messagesDiv.appendChild(p)
+        container.appendChild(p)
       })
     }
 
     function showPersonalLink(userId) {
       const url = `${window.location.origin}/message.html?to=${userId}`
-      personalLinkDiv.innerHTML = `
-        <p>Dein persönlicher Link:</p>
-        <input type="text" value="${url}" id="personalLinkInput" readonly style="width: 100%" />
-        <button onclick="copyLink()">Link kopieren</button>
+      document.getElementById('personal-link').innerHTML = `
+        <p>Dein Link:</p>
+        <input id="link" value="${url}" readonly />
+        <button onclick="navigator.clipboard.writeText('${url}')">Kopieren</button>
       `
-    }
-
-    function copyLink() {
-      const input = document.getElementById('personalLinkInput')
-      input.select()
-      input.setSelectionRange(0, 99999)
-      document.execCommand('copy')
-      alert('Link wurde kopiert!')
     }
 
     async function signUp(event) {
@@ -74,12 +73,17 @@
       const email = document.getElementById('signup-email').value
       const password = document.getElementById('signup-password').value
 
-      const { user, error } = await supabase.auth.signUp({ email, password })
+      const { error } = await supabase.auth.signUp({
+        email,
+        password
+      }, {
+        redirectTo: `${window.location.origin}/index.html`
+      })
 
       if (error) {
-        alert('Fehler bei der Registrierung: ' + error.message)
+        alert('Fehler bei Registrierung: ' + error.message)
       } else {
-        alert('Registrierung erfolgreich! Bitte prüfe deine E-Mail zum Verifizieren.')
+        alert('Registrierung erfolgreich – bitte E-Mail bestätigen.')
       }
     }
 
@@ -88,62 +92,50 @@
       const email = document.getElementById('login-email').value
       const password = document.getElementById('login-password').value
 
-      const { user, error } = await supabase.auth.signIn({ email, password })
+      const { error } = await supabase.auth.signInWithPassword({ email, password })
 
       if (error) {
-        alert('Fehler beim Login: ' + error.message)
+        alert('Login fehlgeschlagen: ' + error.message)
       } else {
-        checkUser()
+        await checkUser()
       }
     }
 
     async function signOut() {
       await supabase.auth.signOut()
-      checkUser()
+      await checkUser()
     }
 
-    window.copyLink = copyLink
+    window.onload = checkUser
     window.signUp = signUp
     window.signIn = signIn
     window.signOut = signOut
-
-    window.onload = () => {
-      loginForm = document.getElementById('login-form')
-      signupForm = document.getElementById('signup-form')
-      logoutBtn = document.getElementById('logout-btn')
-      messagesDiv = document.getElementById('messages')
-      personalLinkDiv = document.getElementById('personal-link')
-
-      checkUser()
-    }
   </script>
 </head>
 <body>
-  <h1>Nachrichten-Portal</h1>
+  <h1>🧾 Dein Nachrichten-Link</h1>
 
   <section id="auth-section">
     <h2>Login</h2>
-    <form id="login-form" onsubmit="signIn(event)">
-      <input id="login-email" type="email" placeholder="Email" required /><br />
-      <input id="login-password" type="password" placeholder="Passwort" required /><br />
+    <form onsubmit="signIn(event)">
+      <input id="login-email" type="email" placeholder="E-Mail" required />
+      <input id="login-password" type="password" placeholder="Passwort" required />
       <button type="submit">Anmelden</button>
     </form>
 
     <h2>Registrieren</h2>
-    <form id="signup-form" onsubmit="signUp(event)">
-      <input id="signup-email" type="email" placeholder="Email" required /><br />
-      <input id="signup-password" type="password" placeholder="Passwort" required /><br />
+    <form onsubmit="signUp(event)">
+      <input id="signup-email" type="email" placeholder="E-Mail" required />
+      <input id="signup-password" type="password" placeholder="Passwort" required />
       <button type="submit">Registrieren</button>
     </form>
   </section>
 
-  <section id="app-section" style="display:none;">
-    <button id="logout-btn" onclick="signOut()">Abmelden</button>
-
-    <h2>Deine Nachrichten</h2>
-    <div id="messages">Lade Nachrichten...</div>
-
+  <section id="app-section" style="display: none;">
+    <button onclick="signOut()">Abmelden</button>
     <div id="personal-link"></div>
+    <h2>📬 Deine Nachrichten</h2>
+    <div id="messages">Lade...</div>
   </section>
 </body>
 </html>
