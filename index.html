@@ -115,9 +115,8 @@ const actualDevice = navigator.userAgent.toLowerCase().includes("mobile") ? "Han
 
 // Uhrzeit leicht verändert (±1 Stunde)
 let currentHour = new Date().getHours();
-let offset = Math.random() > 0.5 ? 1 : -1;
-let alteredHour = (currentHour + offset + 24) % 24;
-let approxTime = `${alteredHour.toString().padStart(2, '0')}:${new Date().getMinutes().toString().padStart(2, '0')}`;
+let currentMinute = new Date().getMinutes();
+let currentTime = `${currentHour.toString().padStart(2, '0')}:${currentMinute.toString().padStart(2, '0')}`;
 
 const steps = [
   { text: "Du hast mich nicht ohne Grund gefunden" },
@@ -132,12 +131,12 @@ const steps = [
   },
   { text: "Merke dir, mich nie anzulügen!" },
   {
-    text: `Stimmt es, dass du gerade auf einem ${actualDevice} unterwegs bist?`,
-    buttons: [
-      { label: "Ja" },
-      { label: "Nein", next: () => { state.deviceMismatch = true; } }
-    ]
-  },
+  text: `Stimmt es, dass du gerade auf einem ${actualDevice} unterwegs bist?`,
+  buttons: [
+    { label: "Ja" },
+    { label: "Nein", next: () => { state.deviceMismatch = true; } }
+  ]
+}
   {
     text: "Bist du allein?",
     buttons: [
@@ -146,12 +145,12 @@ const steps = [
     ]
   },
   {
-    text: `Stimmt es, dass es gerade ${approxTime} Uhr ist?`,
-    buttons: [
-      { label: "Ja", next: () => { state.timeMismatch = true; } },
-      { label: "Nein" }
-    ]
-  },
+  text: `Ich habe bestimmt Recht, dass es gerade ${currentTime} Uhr ist?`,
+  buttons: [
+    { label: "Ja" },
+    { label: "Nein", next: () => { state.timeMismatch = true; } }
+  ]
+}
   {
     text: "Stimmt es, dass du gerade nicht draußen unterwegs bist?",
     buttons: [
