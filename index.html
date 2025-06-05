@@ -1,7 +1,8 @@
 <!DOCTYPE html>
-<html>
+<html lang="de">
 <head>
-  <title>IP-Tracker 😈</title>
+  <meta charset="UTF-8" />
+  <title>Nachrichten-Portal</title>
   <script type="module">
     import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm'
 
@@ -9,24 +10,140 @@
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind4dnBxcG1tcWx3b2dldnlwbmR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDkxMTQxMDQsImV4cCI6MjA2NDY5MDEwNH0.t7HsLa7ZS1OBUtvLiM5IStAwMZjqy_WZ2B-s2SYn32I'
     const supabase = createClient(supabaseUrl, supabaseKey)
 
-    fetch('https://ipinfo.io/json?token=8ce5a4bd1966b2')
-      .then(res => res.json())
-      .then(async data => {
-        const { ip, city, country } = data
+    // DOM-Elemente
+    let loginForm, signupForm, logoutBtn, messagesDiv, personalLinkDiv
 
-        const { error } = await supabase
-          .from('ip_logs')
-          .insert([{ ip, city, country }])
+    async function checkUser() {
+      const user = supabase.auth.user()
+      if (user) {
+        document.getElementById('auth-section').style.display = 'none'
+        document.getElementById('app-section').style.display = 'block'
+        await loadMessages(user.id)
+        showPersonalLink(user.id)
+      } else {
+        document.getElementById('auth-section').style.display = 'block'
+        document.getElementById('app-section').style.display = 'none'
+      }
+    }
 
-        if (error) {
-          console.error('❌ Fehler beim Speichern:', error)
-        } else {
-          console.log('✅ IP erfolgreich gespeichert:', ip, city, country)
-        }
-      });
+    async function loadMessages(userId) {
+      const { data, error } = await supabase
+        .from('messages')
+        .select('text, created_at')
+        .eq('to_user_id', userId)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        messagesDiv.textContent = 'Fehler beim Laden der Nachrichten.'
+        console.error(error)
+        return
+      }
+
+      if (data.length === 0) {
+        messagesDiv.textContent = 'Keine Nachrichten vorhanden.'
+        return
+      }
+
+      messagesDiv.innerHTML = ''
+      data.forEach(msg => {
+        const p = document.createElement('p')
+        p.textContent = `${new Date(msg.created_at).toLocaleString()}: ${msg.text}`
+        messagesDiv.appendChild(p)
+      })
+    }
+
+    function showPersonalLink(userId) {
+      const url = `${window.location.origin}/message.html?to=${userId}`
+      personalLinkDiv.innerHTML = `
+        <p>Dein persönlicher Link:</p>
+        <input type="text" value="${url}" id="personalLinkInput" readonly style="width: 100%" />
+        <button onclick="copyLink()">Link kopieren</button>
+      `
+    }
+
+    function copyLink() {
+      const input = document.getElementById('personalLinkInput')
+      input.select()
+      input.setSelectionRange(0, 99999)
+      document.execCommand('copy')
+      alert('Link wurde kopiert!')
+    }
+
+    async function signUp(event) {
+      event.preventDefault()
+      const email = document.getElementById('signup-email').value
+      const password = document.getElementById('signup-password').value
+
+      const { user, error } = await supabase.auth.signUp({ email, password })
+
+      if (error) {
+        alert('Fehler bei der Registrierung: ' + error.message)
+      } else {
+        alert('Registrierung erfolgreich! Bitte prüfe deine E-Mail zum Verifizieren.')
+      }
+    }
+
+    async function signIn(event) {
+      event.preventDefault()
+      const email = document.getElementById('login-email').value
+      const password = document.getElementById('login-password').value
+
+      const { user, error } = await supabase.auth.signIn({ email, password })
+
+      if (error) {
+        alert('Fehler beim Login: ' + error.message)
+      } else {
+        checkUser()
+      }
+    }
+
+    async function signOut() {
+      await supabase.auth.signOut()
+      checkUser()
+    }
+
+    window.copyLink = copyLink
+    window.signUp = signUp
+    window.signIn = signIn
+    window.signOut = signOut
+
+    window.onload = () => {
+      loginForm = document.getElementById('login-form')
+      signupForm = document.getElementById('signup-form')
+      logoutBtn = document.getElementById('logout-btn')
+      messagesDiv = document.getElementById('messages')
+      personalLinkDiv = document.getElementById('personal-link')
+
+      checkUser()
+    }
   </script>
 </head>
 <body>
-  <h1>👁️ Wir sehen dich!</h1>
+  <h1>Nachrichten-Portal</h1>
+
+  <section id="auth-section">
+    <h2>Login</h2>
+    <form id="login-form" onsubmit="signIn(event)">
+      <input id="login-email" type="email" placeholder="Email" required /><br />
+      <input id="login-password" type="password" placeholder="Passwort" required /><br />
+      <button type="submit">Anmelden</button>
+    </form>
+
+    <h2>Registrieren</h2>
+    <form id="signup-form" onsubmit="signUp(event)">
+      <input id="signup-email" type="email" placeholder="Email" required /><br />
+      <input id="signup-password" type="password" placeholder="Passwort" required /><br />
+      <button type="submit">Registrieren</button>
+    </form>
+  </section>
+
+  <section id="app-section" style="display:none;">
+    <button id="logout-btn" onclick="signOut()">Abmelden</button>
+
+    <h2>Deine Nachrichten</h2>
+    <div id="messages">Lade Nachrichten...</div>
+
+    <div id="personal-link"></div>
+  </section>
 </body>
 </html>
