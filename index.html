@@ -205,13 +205,21 @@ function showStep() {
         button.textContent = btn.label;
 
         button.addEventListener('click', () => {
-          buttonsEl.querySelectorAll('button').forEach(b => b.disabled = true);
+  buttonsEl.querySelectorAll('button').forEach(b => b.disabled = true);
 
-          if (typeof btn.next === "function") btn.next();
+  // 🎭 Verblassen (transparent machen)
+  document.body.style.transition = "opacity 0.4s ease";
+  document.body.style.opacity = "0.2";
 
-          currentStep++;
-          setTimeout(showStep, 2000); // ⏱ Nächste Frage kommt nach 2 Sekunden
-        });
+  if (typeof btn.next === "function") btn.next();
+
+  setTimeout(() => {
+    // ✨ Sichtbar machen und nächste Frage zeigen
+    document.body.style.opacity = "1";
+    currentStep++;
+    showStep();
+  }, 2000);
+});
 
         buttonsEl.appendChild(button);
       });
