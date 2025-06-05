@@ -8,7 +8,7 @@
     input, button { padding: 0.5rem; font-size: 1rem; margin: 0.5rem 0; width: 100%; }
     ul { padding-left: 1.2rem; }
     li { margin-bottom: 0.5rem; background: #f0f0f0; padding: 0.5rem; border-radius: 4px; }
-    #user-link { word-break: break-all; display: block; margin-bottom: 1rem; }
+    #user-link { word-break: break-word; display: block; margin-bottom: 1rem; }
     #logout { margin-top: 1rem; }
   </style>
 </head>
@@ -18,8 +18,7 @@
 
   <div id="auth">
     <input type="email" id="email" placeholder="Deine E-Mail" autocomplete="email" />
-    <button id="btn-signup">Registrieren</button>
-    <button id="btn-login">Anmelden</button>
+    <button id="btn-login">Anmelden / Registrieren (Magic Link)</button>
   </div>
 
   <div id="user-info" style="display:none;">
@@ -43,14 +42,12 @@
     const authDiv = document.getElementById('auth')
     const userInfoDiv = document.getElementById('user-info')
     const emailInput = document.getElementById('email')
-    const btnSignup = document.getElementById('btn-signup')
     const btnLogin = document.getElementById('btn-login')
     const logoutBtn = document.getElementById('logout')
     const userEmailSpan = document.getElementById('user-email')
     const userLink = document.getElementById('user-link')
     const messagesList = document.getElementById('messages-list')
 
-    // User anzeigen, wenn eingeloggt
     async function showUser(user) {
       authDiv.style.display = 'none'
       userInfoDiv.style.display = 'block'
@@ -63,7 +60,6 @@
       await loadMessages(user)
     }
 
-    // Nachrichten laden
     async function loadMessages(user) {
       const { data, error } = await supabase
         .from('messages')
@@ -92,33 +88,18 @@
       }
     }
 
-    // Anmeldung
     btnLogin.addEventListener('click', async () => {
       const email = emailInput.value.trim()
       if (!email) return alert('Bitte E-Mail eingeben.')
 
-      const { error } = await supabase.auth.signInWithPassword({ email, password: 'irgendeinPasswort123!' })
+      const { error } = await supabase.auth.signInWithOtp({ email })
       if (error) {
-        alert('Login fehlgeschlagen: ' + error.message)
+        alert('Fehler beim Senden des Login-Links: ' + error.message)
         return
       }
       alert('Login-Link wurde an deine E-Mail gesendet. Bitte überprüfe dein Postfach.')
     })
 
-    // Registrierung
-    btnSignup.addEventListener('click', async () => {
-      const email = emailInput.value.trim()
-      if (!email) return alert('Bitte E-Mail eingeben.')
-
-      const { error } = await supabase.auth.signUp({ email })
-      if (error) {
-        alert('Registrierung fehlgeschlagen: ' + error.message)
-        return
-      }
-      alert('Bestätigungslink wurde an deine E-Mail gesendet. Bitte überprüfe dein Postfach.')
-    })
-
-    // Logout
     logoutBtn.addEventListener('click', async () => {
       await supabase.auth.signOut()
       authDiv.style.display = 'block'
@@ -130,7 +111,6 @@
       userLink.textContent = 'Lade Link...'
     })
 
-    // Prüfen, ob User bereits eingeloggt ist (Session)
     async function checkSession() {
       const { data: { session } } = await supabase.auth.getSession()
       if (session?.user) {
@@ -143,7 +123,6 @@
 
     checkSession()
 
-    // Supabase Auth State Listener (aktualisiert automatisch bei Login/Logout)
     supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         showUser(session.user)
